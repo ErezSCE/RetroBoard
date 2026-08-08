@@ -65,6 +65,76 @@ app.use((req, res, next) => {
 const port = process.env.PORT || 3000;
 
 // Health‑check endpoint
+
+// Column management endpoints
+const prisma = require('./prismaClient');
+
+// Create a new column
+app.post('/columns', async (req, res) => {
+  const { sessionId, title, position } = req.body;
+  if (!sessionId || !title) {
+    return res.status(400).json({ error: 'sessionId and title are required' });
+  }
+  try {
+    const column = await prisma.column.create({
+      data: { sessionId, title, position: position ?? 0 },
+    });
+    res.status(201).json(column);
+  } catch (err) {
+    logger.error('Error creating column', { error: err });
+    res.status(500).json({ error: 'Failed to create column' });
+  }
+});
+
+// Get columns for a session
+app.get('/columns', async (req, res) => {
+  const { sessionId } = req.query;
+  if (!sessionId) {
+    return res.status(400).json({ error: 'sessionId query parameter is required' });
+  }
+  try {
+    const columns = await prisma.column.findMany({
+      where: { sessionId: Number(sessionId) },
+      orderBy: { position: 'asc' },
+    });
+    res.json(columns);
+  } catch (err) {
+    logger.error('Error fetching columns', { error: err });
+    res.status(500).json({ error: 'Failed to fetch columns' });
+  }
+});
+
+// Update a column
+app.put('/columns/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, position } = req.body;
+  try {
+    const column = await prisma.column.update({
+      where: { id: Number(id) },
+      data: { ...(title && { title }), ...(position !== undefined && { position }) },
+    });
+    res.json(column);
+  } catch (err) {
+    logger.error('Error updating column', { error: err });
+    res.status(500).json({ error: 'Failed to update column' });
+  }
+});
+
+// Delete a column (prevent deletion if it contains cards)
+app.delete('/columns/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const cardCount = await prisma.card.count({ where: { columnId: Number(id) } });
+    if (cardCount > 0) {
+      return res.status(400).json({ error: 'Column contains cards; cannot delete without confirmation' });
+    }
+    await prisma.column.delete({ where: { id: Number(id) } });
+    res.status(204).end();
+  } catch (err) {
+    logger.error('Error deleting column', { error: err });
+    res.status(500).json({ error: 'Failed to delete column' });
+  }
+});
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
