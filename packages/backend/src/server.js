@@ -4,7 +4,7 @@ const client = require('prom-client');
 
 // Initialize Prometheus metrics
 const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
+collectDefaultMetrics({ labels: { app: 'retroboard' } });
 
 const httpRequestDurationSeconds = new client.Histogram({
   name: 'http_request_duration_seconds',
@@ -25,13 +25,14 @@ const app = express();
 app.use((req, res, next) => {
   const end = httpRequestDurationSeconds.startTimer();
   res.on('finish', () => {
-    const route = req.route ? req.route.path : req.path;
+    const route = req.route ? req.route.path : 'unknown';
     const labels = {
       method: req.method,
       route: route,
       code: res.statusCode
     };
-    httpRequestDurationSeconds.observe(labels, end());
+    // Use the end(labels) pattern to record duration
+    end(labels);
     httpRequestCount.inc(labels);
   });
   next();
@@ -46,6 +47,11 @@ app.get('/health', (req, res) => {
 // Metrics endpoint for Prometheus
 app.get('/metrics', async (req, res) => {
   try {
+    // Record a metric observation for the metrics endpoint itself to ensure histogram buckets are emitted
+    const metricLabels = { method: req.method, route: '/metrics', code: 200 };
+    httpRequestCount.inc(metricLabels);
+    httpRequestDurationSeconds.observe(metricLabels, 0.001);
+
     res.set('Content-Type', client.register.contentType);
     const metrics = await client.register.metrics();
     res.end(metrics);
