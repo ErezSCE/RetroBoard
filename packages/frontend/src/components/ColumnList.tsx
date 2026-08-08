@@ -29,7 +29,7 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
     const fetchColumns = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/columns', { params: { sessionId }, signal: controller.signal });
+        const res = await axios.get('/columns', { params: { sessionId } });
         if (isMounted.current) {
           setColumns(res.data);
           setError('');
@@ -94,16 +94,6 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
     }
   };
 
-  const performDelete = async (id: number) => {
-    try {
-      await axios.delete(`/columns/${id}`);
-      setColumns((prev) => prev.filter((col) => col.id !== id));
-      setError('');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete column');
-    }
-  };
-
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`/columns/${id}`);
@@ -121,7 +111,8 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
 
   const confirmDelete = async () => {
     if (deleteConfirmId !== null) {
-      await performDelete(deleteConfirmId);
+      // Retry deletion after confirmation
+      await handleDelete(deleteConfirmId);
       setDeleteConfirmId(null);
     }
   };
@@ -146,9 +137,9 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
                 setEditedTitles((prev) => ({ ...prev, [col.id]: val }));
               }}
               onBlur={(e) => {
-                const newTitle = e.target.value;
-                if (newTitle !== col.title) {
-                  handleRename(col.id, newTitle);
+                const editedTitle = editedTitles[col.id] ?? e.target.value;
+                if (editedTitle !== col.title) {
+                  handleRename(col.id, editedTitle);
                 }
               }}
             />
