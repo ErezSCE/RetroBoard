@@ -29,6 +29,9 @@ function createOfflineSyncRouter(prisma) {
     }
 
     // Process actions in parallel for better throughput while preserving per-action error handling.
+    // NOTE: Actions are processed independently; if an action depends on the result of a previous one (e.g., create a card then vote on it),
+    // the client must ensure ordering by sending dependent actions in separate sync requests or by handling ordering on the server.
+    // Alternatively, switch to sequential processing (e.g., using a for...of loop with await) if strict ordering is required.
     const results = await Promise.all(actions.map(async (action) => {
       if (!action || typeof action.type !== 'string' || !action.payload) {
         return { action, status: 'error', error: 'Malformed action' };
