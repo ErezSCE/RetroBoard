@@ -1,0 +1,116 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Session {
+  id          Int          @id @default(autoincrement())
+  title       String?
+  description String?
+  scheduled_at DateTime?
+  share_token String       @unique
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  participants Participant[]
+  columns      Column[]
+  clusters     Cluster[]
+  cards        Card[]
+  action_items ActionItem[]
+}
+
+model Participant {
+  id         Int          @id @default(autoincrement())
+  session    Session      @relation(fields: [sessionId], references: [id])
+  sessionId  Int
+  display_name String
+  joined_at  DateTime     @default(now())
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+
+  card_votes   CardVote[]
+  cluster_votes ClusterVote[]
+  action_items ActionItem[]
+}
+
+model Column {
+  id        Int      @id @default(autoincrement())
+  session   Session  @relation(fields: [sessionId], references: [id])
+  sessionId Int
+  title     String
+  position  Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  cards Card[]
+}
+
+model Cluster {
+  id        Int      @id @default(autoincrement())
+  session   Session  @relation(fields: [sessionId], references: [id])
+  sessionId Int
+  title     String
+  position  Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  cards Card[]
+}
+
+model Card {
+  id          Int      @id @default(autoincrement())
+  session     Session  @relation(fields: [sessionId], references: [id])
+  sessionId   Int
+  column      Column?  @relation(fields: [columnId], references: [id])
+  columnId    Int?
+  cluster     Cluster? @relation(fields: [clusterId], references: [id])
+  clusterId   Int?
+  content     String
+  author_name String
+  position    Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  card_votes CardVote[]
+}
+
+model CardVote {
+  id            Int          @id @default(autoincrement())
+  card          Card         @relation(fields: [cardId], references: [id])
+  cardId        Int
+  participant   Participant  @relation(fields: [participantId], references: [id])
+  participantId Int
+  vote_count    Int
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+}
+
+model ClusterVote {
+  id            Int          @id @default(autoincrement())
+  cluster       Cluster      @relation(fields: [clusterId], references: [id])
+  clusterId     Int
+  participant   Participant  @relation(fields: [participantId], references: [id])
+  participantId Int
+  vote_count    Int
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+}
+
+model ActionItem {
+  id                 Int          @id @default(autoincrement())
+  session            Session      @relation(fields: [sessionId], references: [id])
+  sessionId          Int
+  source_type        String
+  source_id          Int?
+  title              String
+  owner_participant  Participant? @relation(fields: [ownerParticipantId], references: [id])
+  ownerParticipantId Int?
+  due_date           DateTime?
+  status             String
+  created_at         DateTime     @default(now())
+  updated_at         DateTime     @updatedAt
+}
