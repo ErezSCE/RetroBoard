@@ -12,6 +12,11 @@ services:
   api:
     build:
       context: ./packages/backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     environment:
       DATABASE_URL: postgres://retro:retropass@db:5432/retroboard
     ports:
@@ -22,6 +27,11 @@ services:
   frontend:
     build:
       context: ./packages/frontend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     ports:
       - "5173:5173"
     depends_on:
