@@ -12,7 +12,7 @@ const logger = createLogger({
   format: format.json(),
   transports: [
     new transports.Console(),
-    new transports.File({ filename: require('path').join(__dirname, '..', 'logs', 'app.log') })
+    new transports.File({ filename: path.join(__dirname, '..', 'logs', 'app.log') })
   ]
 });
 

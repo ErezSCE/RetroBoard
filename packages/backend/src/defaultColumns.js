@@ -3,8 +3,10 @@
  * This is used during session creation or seeding to ensure a new retro board
  * starts with the typical columns.
  */
+const logger = require('./logger');
+
 async function createDefaultColumns(prisma, sessionId) {
-  const logger = require('./logger');
+
   const defaultTitles = ['Went Well', 'To Improve', 'Action Items'];
   const columnsData = defaultTitles.map((title, index) => ({
     sessionId,

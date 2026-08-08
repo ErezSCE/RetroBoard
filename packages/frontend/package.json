@@ -2,9 +2,10 @@
   "name": "retroboard-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "jest", "test:watch": "jest --watchAll"
-
+    "test": "jest",
+    "test:watch": "jest --watchAll",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

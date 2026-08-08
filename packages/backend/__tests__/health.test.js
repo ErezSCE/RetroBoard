@@ -1,4 +1,8 @@
 const request = require('supertest');
+// Mock PrismaClient to avoid real DB connections during tests
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn(() => ({})),
+}));
 const app = require('../src/server');
 
 describe('Health Check Endpoint', () => {

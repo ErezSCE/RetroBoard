@@ -28,11 +28,10 @@ function createOfflineSyncRouter(prisma) {
       return res.status(400).json({ error: 'Invalid payload: actions must be an array' });
     }
 
-    const results = [];
-    for (const action of actions) {
+    // Process actions in parallel for better throughput while preserving per-action error handling.
+    const results = await Promise.all(actions.map(async (action) => {
       if (!action || typeof action.type !== 'string' || !action.payload) {
-        results.push({ action, status: 'error', error: 'Malformed action' });
-        continue;
+        return { action, status: 'error', error: 'Malformed action' };
       }
       try {
         switch (action.type) {
@@ -51,19 +50,18 @@ function createOfflineSyncRouter(prisma) {
             const created = await prisma.card.create({
               data: { sessionId, columnId, content, author_name, position },
             });
-            results.push({ action, status: 'success', result: created });
-            break;
+            return { action, status: 'success', result: created };
           }
           // Future action types can be added here.
           default: {
-            results.push({ action, status: 'ignored', reason: 'Unsupported action type' });
+            return { action, status: 'ignored', reason: 'Unsupported action type' };
           }
         }
       } catch (err) {
         logger.error('Error processing offline action', { error: err, action });
-        results.push({ action, status: 'error', error: err.message });
+        return { action, status: 'error', error: err.message };
       }
-    }
+    }));
 
     return res.json({ results });
   });
