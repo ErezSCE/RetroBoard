@@ -4,7 +4,8 @@ import react from '@vitejs/plugin-react';
 // Minimal Vite configuration for the frontend package.
 export default defineConfig({
   plugins: [react()],
-  root: __dirname,
+  // Use relative path for root in ESM context
+  root: '.',
   build: {
     outDir: 'dist',
     rollupOptions: {

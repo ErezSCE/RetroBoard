@@ -32,6 +32,22 @@ function createOfflineSyncRouter(prisma) {
     // NOTE: Actions are processed independently; if an action depends on the result of a previous one (e.g., create a card then vote on it),
     // the client must ensure ordering by sending dependent actions in separate sync requests or by handling ordering on the server.
     // Alternatively, switch to sequential processing (e.g., using a for...of loop with await) if strict ordering is required.
+    // Validate payloads before processing actions
+    for (const action of actions) {
+      if (action.type === 'createCard') {
+        const { sessionId, columnId, content, author_name, position } = action.payload || {};
+        if (
+          typeof sessionId !== 'number' ||
+          typeof columnId !== 'number' ||
+          typeof content !== 'string' ||
+          typeof author_name !== 'string' ||
+          typeof position !== 'number'
+        ) {
+          logger.warn('Invalid createCard payload', { payload: action.payload });
+          return res.status(400).json({ error: 'Invalid createCard payload' });
+        }
+      }
+    }
     const results = await Promise.all(actions.map(async (action) => {
       if (!action || typeof action.type !== 'string' || !action.payload) {
         return { action, status: 'error', error: 'Malformed action' };
