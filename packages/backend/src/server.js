@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const { Server: SocketIOServer } = require('socket.io');
 const logger = require('./logger');
 const client = require('prom-client');
 
@@ -20,6 +22,24 @@ const httpRequestCount = new client.Counter({
 });
 
 const app = express();
+app.use(express.json());
+
+// Create HTTP server and attach Socket.io
+const server = http.createServer(app);
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Handle client connections
+io.on('connection', (socket) => {
+  logger.info('Client connected', { socketId: socket.id });
+  socket.on('disconnect', () => {
+    logger.info('Client disconnected', { socketId: socket.id });
+  });
+});
 
 // Middleware to record request metrics
 app.use((req, res, next) => {
@@ -63,9 +83,9 @@ app.get('/metrics', async (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(port, () => {
+  server.listen(port, () => {
     logger.info(`Backend listening on port ${port}`);
   });
 }
 
-module.exports = app; // Export for testing
+module.exports = { app, server, io }; // Export for testing
