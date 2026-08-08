@@ -71,7 +71,7 @@ if (require.main === module) {
   });
 }
 
-let prisma;
+let prisma; // Prisma client instance; may be null in test environments where the client is not generated
 try {
   const { PrismaClient } = require('@prisma/client');
   prisma = new PrismaClient();
