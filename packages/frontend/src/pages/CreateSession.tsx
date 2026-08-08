@@ -74,7 +74,7 @@ const CreateSession: React.FC = () => {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading || !title.trim()}>
           {loading ? 'Creating...' : 'Create Session'}
         </button>
       </form>

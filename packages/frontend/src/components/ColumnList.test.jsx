@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ColumnList from './ColumnList';
+import ColumnList from './ColumnList.tsx';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -97,11 +97,14 @@ describe('ColumnList component', () => {
     const deleteButtons = await screen.findAllByTestId('delete-button');
     fireEvent.click(deleteButtons[0]);
 
-    await waitFor(() => expect(confirmSpy).toHaveBeenCalled());
+    // Wait for confirm dialog and click confirm button
+await waitFor(() => expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument());
+const confirmBtn = screen.getByTestId('confirm-delete-button');
+fireEvent.click(confirmBtn);
     await waitFor(() => expect(axios.delete).toHaveBeenCalledTimes(2));
     const items = screen.queryAllByTestId('column-item');
     expect(items).toHaveLength(initialColumns.length - 1);
 
-    confirmSpy.mockRestore();
+
   });
 });

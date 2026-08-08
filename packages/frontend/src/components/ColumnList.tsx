@@ -25,17 +25,21 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
   useEffect(() => {
     isMounted.current = true;
     if (!sessionId) return;
+    const controller = new AbortController();
     const fetchColumns = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/columns', { params: { sessionId } });
+        const res = await axios.get('/columns', { params: { sessionId }, signal: controller.signal });
         if (isMounted.current) {
           setColumns(res.data);
           setError('');
         }
       } catch (err: any) {
         if (isMounted.current) {
-          setError(err.response?.data?.error || 'Failed to load columns');
+          // If request was aborted, ignore error
+          if (err.name !== 'CanceledError') {
+            setError(err.response?.data?.error || 'Failed to load columns');
+          }
         }
       } finally {
         if (isMounted.current) setLoading(false);
@@ -44,6 +48,7 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
     fetchColumns();
     return () => {
       isMounted.current = false;
+      controller.abort();
     };
   }, [sessionId]);
 
@@ -61,14 +66,24 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
       setError('');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to rename column');
+      // Revert edited title to original on error
+      setEditedTitles((prev) => {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
   const handleAdd = async () => {
     if (!newTitle.trim()) return;
+    const numericSessionId = Number(sessionId);
+    if (Number.isNaN(numericSessionId)) {
+      setError('Invalid session ID');
+      return;
+    }
     try {
       const res = await axios.post('/columns', {
-        sessionId: Number(sessionId),
+        sessionId: numericSessionId,
         title: newTitle.trim(),
       });
       setColumns((prev) => [...prev, res.data]);
