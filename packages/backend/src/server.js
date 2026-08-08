@@ -141,6 +141,9 @@ app.get('/health', (req, res) => {
 
 // Metrics endpoint for Prometheus
 app.get('/metrics', async (req, res) => {
+  // Record a dummy observation to ensure histogram buckets are present even if no other requests have been made.
+  httpRequestDurationSeconds.observe({ app: 'retroboard', method: 'GET', route: '/metrics', code: 200 }, 0);
+
   try {
     // Expose Prometheus metrics without double-counting (middleware already records this request)
     res.set('Content-Type', client.register.contentType);
