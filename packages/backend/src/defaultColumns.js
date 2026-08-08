@@ -11,15 +11,16 @@ async function createDefaultColumns(prisma, sessionId) {
     title,
     position: index,
   }));
-  // Use createMany for efficiency; Prisma supports it for PostgreSQL.
+
   try {
-    await prisma.column.createMany({
+    const result = await prisma.column.createMany({
       data: columnsData,
       skipDuplicates: true,
     });
+    // Return the Prisma createMany response (e.g., count of created rows)
+    return result;
   } catch (error) {
-    // Propagate the error after logging for visibility
-    const logger = require('./logger');
+    // Log error and rethrow for upstream handling
     logger.error('Failed to create default columns', { error, sessionId });
     throw error;
   }
