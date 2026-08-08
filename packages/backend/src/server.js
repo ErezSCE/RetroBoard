@@ -20,6 +20,7 @@ const httpRequestCount = new client.Counter({
 });
 
 const app = express();
+app.use(express.json());
 
 // Middleware to record request metrics
 app.use((req, res, next) => {
@@ -67,5 +68,10 @@ if (require.main === module) {
     logger.info(`Backend listening on port ${port}`);
   });
 }
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+const { createOfflineSyncRouter } = require('./offlineSync');
+app.use(createOfflineSyncRouter(prisma));
 
 module.exports = app; // Export for testing
