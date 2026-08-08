@@ -15,6 +15,7 @@ model Session {
   share_token String       @unique
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
+  vote_budget Int @default(5)
 
   participants Participant[]
   columns      Column[]

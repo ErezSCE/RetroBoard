@@ -69,6 +69,92 @@ const port = process.env.PORT || 3000;
 // Column management endpoints
 const prisma = require('./prismaClient');
 
+// Voting endpoint (POST /votes)
+app.post('/votes', async (req, res) => {
+  const { participantId, sessionId, targetType, targetId, voteCount } = req.body;
+  if (!participantId || !sessionId || !targetType || !targetId || typeof voteCount !== 'number') {
+    return res.status(400).json({ error: 'participantId, sessionId, targetType, targetId, and voteCount are required' });
+  }
+  if (!['card', 'cluster'].includes(targetType)) {
+    return res.status(400).json({ error: 'targetType must be either "card" or "cluster"' });
+  }
+  try {
+    // Verify participant belongs to session
+    const participant = await prisma.participant.findUnique({
+      where: { id: Number(participantId) },
+      select: { sessionId: true },
+    });
+    if (!participant || participant.sessionId !== Number(sessionId)) {
+      return res.status(400).json({ error: 'Invalid participant for session' });
+    }
+    // Get session vote budget
+    const session = await prisma.session.findUnique({
+      where: { id: Number(sessionId) },
+      select: { vote_budget: true },
+    });
+    const voteBudget = session?.vote_budget ?? 5; // default fallback
+    // Calculate current used votes
+    const cardVotesAgg = await prisma.cardVote.aggregate({
+      where: { participantId: Number(participantId), card: { sessionId: Number(sessionId) } },
+      _sum: { vote_count: true },
+    });
+    const clusterVotesAgg = await prisma.clusterVote.aggregate({
+      where: { participantId: Number(participantId), cluster: { sessionId: Number(sessionId) } },
+      _sum: { vote_count: true },
+    });
+    const usedVotes = (cardVotesAgg._sum.vote_count || 0) + (clusterVotesAgg._sum.vote_count || 0);
+    if (usedVotes + voteCount > voteBudget) {
+      return res.status(400).json({ error: 'Vote budget exceeded' });
+    }
+    // Upsert vote record
+    if (targetType === 'card') {
+      const existing = await prisma.cardVote.findFirst({
+        where: { participantId: Number(participantId), cardId: Number(targetId) },
+      });
+      if (existing) {
+        const updated = await prisma.cardVote.update({
+          where: { participantId_cardId: { participantId: Number(participantId), cardId: Number(targetId) } },
+          data: { vote_count: { increment: voteCount } },
+        });
+        return res.json(updated);
+      } else {
+        const created = await prisma.cardVote.create({
+          data: {
+            participantId: Number(participantId),
+            cardId: Number(targetId),
+            vote_count: voteCount,
+          },
+        });
+        return res.status(201).json(created);
+      }
+    } else {
+      // cluster
+      const existing = await prisma.clusterVote.findUnique({
+        where: { participantId_clusterId: { participantId: Number(participantId), clusterId: Number(targetId) } },
+      });
+      if (existing) {
+        const updated = await prisma.clusterVote.update({
+          where: { participantId_clusterId: { participantId: Number(participantId), clusterId: Number(targetId) } },
+          data: { vote_count: { increment: voteCount } },
+        });
+        return res.json(updated);
+      } else {
+        const created = await prisma.clusterVote.create({
+          data: {
+            participantId: Number(participantId),
+            clusterId: Number(targetId),
+            vote_count: voteCount,
+          },
+        });
+        return res.status(201).json(created);
+      }
+    }
+  } catch (err) {
+    logger.error('Error processing vote', { error: err });
+    return res.status(500).json({ error: 'Failed to process vote' });
+  }
+});
+
 // Create a new column
 app.post('/columns', async (req, res) => {
   const { sessionId, title, position } = req.body;
