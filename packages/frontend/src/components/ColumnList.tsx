@@ -146,9 +146,9 @@ export default function ColumnList({ sessionId }: ColumnListProps) {
                 setEditedTitles((prev) => ({ ...prev, [col.id]: val }));
               }}
               onBlur={(e) => {
-                const current = editedTitles[col.id] ?? col.title;
-                if (current !== col.title) {
-                  handleRename(col.id, current);
+                const newTitle = e.target.value;
+                if (newTitle !== col.title) {
+                  handleRename(col.id, newTitle);
                 }
               }}
             />

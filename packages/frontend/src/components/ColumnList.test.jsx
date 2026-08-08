@@ -1,7 +1,8 @@
 import React from 'react';
+import { act } from '@testing-library/react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ColumnList from './ColumnList.tsx';
+import ColumnList from './ColumnList';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -20,7 +21,9 @@ describe('ColumnList component', () => {
   test('fetches and displays columns on mount', async () => {
     axios.get.mockResolvedValueOnce({ data: initialColumns });
 
-    render(<ColumnList sessionId={sessionId} />);
+    await act(async () => {
+      render(<ColumnList sessionId={sessionId} />);
+    });
 
     expect(axios.get).toHaveBeenCalledWith('/columns', { params: { sessionId } });
 
@@ -101,7 +104,11 @@ describe('ColumnList component', () => {
 await waitFor(() => expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument());
 const confirmBtn = screen.getByTestId('confirm-delete-button');
 fireEvent.click(confirmBtn);
-    await waitFor(() => expect(axios.delete).toHaveBeenCalledTimes(2));
+    // Wait for delete calls to complete and dialog to disappear
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledTimes(2);
+      expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    });
     const items = screen.queryAllByTestId('column-item');
     expect(items).toHaveLength(initialColumns.length - 1);
 
