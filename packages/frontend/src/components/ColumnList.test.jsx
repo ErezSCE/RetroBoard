@@ -1,4 +1,5 @@
 import React from 'react';
+import { act } from '@testing-library/react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ColumnList from './ColumnList';
@@ -20,7 +21,9 @@ describe('ColumnList component', () => {
   test('fetches and displays columns on mount', async () => {
     axios.get.mockResolvedValueOnce({ data: initialColumns });
 
-    render(<ColumnList sessionId={sessionId} />);
+    await act(async () => {
+      render(<ColumnList sessionId={sessionId} />);
+    });
 
     expect(axios.get).toHaveBeenCalledWith('/columns', { params: { sessionId } });
 
@@ -89,19 +92,26 @@ describe('ColumnList component', () => {
     // After confirmation, second delete succeeds
     axios.delete.mockResolvedValueOnce({ status: 204 });
 
-    // Mock window.confirm to return true
-    const confirmSpy = jest.spyOn(window, 'confirm').mockImplementation(() => true);
+    // Mock confirm dialog button click
+    // No need to mock window.confirm as component uses ConfirmDialog
 
     render(<ColumnList sessionId={sessionId} />);
 
     const deleteButtons = await screen.findAllByTestId('delete-button');
     fireEvent.click(deleteButtons[0]);
 
-    await waitFor(() => expect(confirmSpy).toHaveBeenCalled());
-    await waitFor(() => expect(axios.delete).toHaveBeenCalledTimes(2));
+    // Wait for confirm dialog and click confirm button
+await waitFor(() => expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument());
+const confirmBtn = screen.getByTestId('confirm-delete-button');
+fireEvent.click(confirmBtn);
+    // Wait for delete calls to complete and dialog to disappear
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledTimes(2);
+      expect(screen.queryByTestId('confirm-dialog')).not.toBeInTheDocument();
+    });
     const items = screen.queryAllByTestId('column-item');
     expect(items).toHaveLength(initialColumns.length - 1);
 
-    confirmSpy.mockRestore();
+
   });
 });
