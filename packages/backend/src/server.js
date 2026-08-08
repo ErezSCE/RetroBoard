@@ -79,7 +79,7 @@ try {
   // In test environments where Prisma client is not generated, skip DB initialization.
   // Provide a minimal mock to satisfy router creation if needed.
   prisma = null;
-  console.warn('Prisma client not initialized:', e.message);
+  logger.warn('Prisma client not initialized:', { message: e.message });
 }
 if (prisma) {
   const { createOfflineSyncRouter } = require('./offlineSync');

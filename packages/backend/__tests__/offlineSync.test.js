@@ -65,7 +65,7 @@ describe('POST /offline/sync', () => {
     expect(result.reason).toBe('Unsupported action type');
   });
 
-  test('returns 400 for malformed createCard action', async () => {
+  test('returns per-action error for malformed createCard action', async () => {
     const actions = [
       {
         type: 'createCard',
@@ -79,8 +79,10 @@ describe('POST /offline/sync', () => {
       },
     ];
     const response = await request(app).post('/offline/sync').send({ actions });
-    expect(response.status).toBe(400);
-    expect(response.body).toHaveProperty('error');
-    expect(response.body.error).toBe('Invalid createCard payload');
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('results');
+    const result = response.body.results[0];
+    expect(result.status).toBe('error');
+    expect(result.error).toBe('Invalid createCard payload');
   });
 });
