@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
 /**
@@ -6,7 +6,11 @@ import axios from 'axios';
  * Props:
  *  - sessionId: number | string (required)
  */
-export default function ColumnList({ sessionId }) {
+interface ColumnListProps {
+  sessionId: string | number;
+}
+
+export default function ColumnList({ sessionId }: ColumnListProps) {
   const [columns, setColumns] = useState([]);
   const [newTitle, setNewTitle] = useState('');
 
@@ -89,9 +93,8 @@ export default function ColumnList({ sessionId }) {
                 );
               }}
               onBlur={(e) => {
-                if (e.target.value !== col.title) {
-                  handleRename(col.id, e.target.value);
-                }
+                // Always attempt rename on blur to ensure updates are sent.
+                handleRename(col.id, e.target.value);
               }}
             />
             <button onClick={() => handleDelete(col.id)} data-testid="delete-button">

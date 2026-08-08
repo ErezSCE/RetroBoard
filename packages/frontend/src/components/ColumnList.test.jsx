@@ -89,8 +89,8 @@ describe('ColumnList component', () => {
     // After confirmation, second delete succeeds
     axios.delete.mockResolvedValueOnce({ status: 204 });
 
-    // Mock window.confirm to return true
-    const confirmSpy = jest.spyOn(window, 'confirm').mockImplementation(() => true);
+    // Mock confirm dialog button click
+    // No need to mock window.confirm as component uses ConfirmDialog
 
     render(<ColumnList sessionId={sessionId} />);
 
