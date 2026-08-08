@@ -67,6 +67,65 @@ const port = process.env.PORT || 3000;
 // Health‑check endpoint
 
 // Column management endpoints
+
+// Action Item endpoints
+app.post('/action-items', async (req, res) => {
+  const { sessionId, source_type, source_id, title, ownerParticipantId, due_date } = req.body;
+  if (!sessionId || !source_type || !source_id || !title) {
+    return res.status(400).json({ error: 'sessionId, source_type, source_id, and title are required' });
+  }
+  if (!['card', 'cluster'].includes(source_type)) {
+    return res.status(400).json({ error: 'source_type must be either "card" or "cluster"' });
+  }
+  try {
+    const actionItem = await prisma.actionItem.create({
+      data: {
+        sessionId,
+        source_type,
+        source_id,
+        title,
+        ownerParticipantId: ownerParticipantId ?? null,
+        due_date: due_date ? new Date(due_date) : null,
+        status: 'open',
+      },
+    });
+    res.status(201).json(actionItem);
+  } catch (err) {
+    logger.error('Error creating action item', { error: err });
+    res.status(500).json({ error: 'Failed to create action item' });
+  }
+});
+
+app.put('/action-items/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, ownerParticipantId, due_date, status } = req.body;
+  try {
+    const actionItem = await prisma.actionItem.update({
+      where: { id: Number(id) },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(ownerParticipantId !== undefined && { ownerParticipantId: ownerParticipantId ?? null }),
+        ...(due_date !== undefined && { due_date: due_date ? new Date(due_date) : null }),
+        ...(status !== undefined && { status }),
+      },
+    });
+    res.json(actionItem);
+  } catch (err) {
+    logger.error('Error updating action item', { error: err });
+    res.status(500).json({ error: 'Failed to update action item' });
+  }
+});
+
+app.delete('/action-items/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.actionItem.delete({ where: { id: Number(id) } });
+    res.status(204).end();
+  } catch (err) {
+    logger.error('Error deleting action item', { error: err });
+    res.status(500).json({ error: 'Failed to delete action item' });
+  }
+});
 const prisma = require('./prismaClient');
 
 // Voting endpoint (POST /votes)
