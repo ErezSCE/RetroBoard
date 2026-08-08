@@ -6,7 +6,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "start": "node src/server.js",
-    "test": "jest"
+    "test": "jest",
+    "build": "echo \"backend build not required\""
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

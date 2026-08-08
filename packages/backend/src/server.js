@@ -6,7 +6,7 @@ const client = require('prom-client');
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics();
 
-const httpRequestDurationMicroseconds = new client.Histogram({
+const httpRequestDurationSeconds = new client.Histogram({
   name: 'http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
   labelNames: ['method', 'route', 'code'],
@@ -23,7 +23,7 @@ const app = express();
 
 // Middleware to record request metrics
 app.use((req, res, next) => {
-  const end = httpRequestDurationMicroseconds.startTimer();
+  const end = httpRequestDurationSeconds.startTimer();
   res.on('finish', () => {
     const route = req.route ? req.route.path : req.path;
     const labels = {
@@ -31,7 +31,7 @@ app.use((req, res, next) => {
       route: route,
       code: res.statusCode
     };
-    httpRequestDurationMicroseconds.observe(labels, end());
+    httpRequestDurationSeconds.observe(labels, end());
     httpRequestCount.inc(labels);
   });
   next();
