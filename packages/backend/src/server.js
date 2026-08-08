@@ -25,9 +25,7 @@ const app = express();
 app.use(express.json());
 
 // Create HTTP server and attach Socket.io
-const http = require('http');
 const server = http.createServer(app);
-const { Server: SocketIOServer } = require('socket.io');
 const io = new SocketIOServer(server, {
   cors: {
     origin: '*',

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../src/server');
+const { app } = require('../src/server');
 
 describe('Metrics Endpoint', () => {
   test('GET /metrics returns Prometheus metrics', async () => {
